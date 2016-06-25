@@ -1,11 +1,20 @@
 # -*- coding: utf-8 -*-
+# Python 2/3 compatibility boilerplate
+from __future__ import absolute_import
+from __future__ import with_statement
+from __future__ import division
+from __future__ import unicode_literals
+from future.utils import raise_with_traceback
+from future.utils import raise_from
+from future.utils import with_metaclass
+from builtins import str
+from builtins import int
+
 """
 Created on Tue Sep 23 11:17:38 2014
-
 @author: Martino Sorbaro
 @author: Matthias Hennig
 """
-from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import __version__ as skvers
@@ -18,9 +27,17 @@ import h5py
 import warnings
 from sys import stdout
 
-if float(skvers) < 0.17:
-    raise Warning('Sklearn version >= 0.17 may be needed')
+def versioncompare(v1,v2):
+    v1,v2 = map(int,v1.split('.')), map(int,v2.split('.'))
+    l1,l2 = len(v1), len(v2)
+    for i in range(max(l1,l2)):
+        n1 = v1[i] if i<l1 else 0
+        n2 = v2[i] if i<l2 else 0
+        if n1!=n2 : return n1-n2
+    return 0
 
+if versioncompare(skvers,'0.17')<0:
+    raise Warning('Sklearn version >= 0.17 may be needed')
 
 def ImportInterpolated(filename, shapesrange=None):
     """Helper function to read spike data from an hdf5 file."""
@@ -80,7 +97,6 @@ def _normed(X):
 class spikeclass(object):
     """A class containing code to work on 2d data with the Mean Shift
     clustering algorithms and various filters.
-
     Can be initialised in three ways:
         -- with a string pointing to an hdf5 file. This file must have been
          previously saved using this class.
@@ -92,7 +108,7 @@ class spikeclass(object):
 
     def __init__(self, *args, **kwargs):
         if len(args) == 1:
-            if isinstance(args[0], str):
+            if type(u'test') in {str,unicode}:
                 g = h5py.File(args[0], 'r')
                 self.__data = np.array(g['data'].value, dtype=float)
                 self.__ClusterID = np.array(g['cluster_id'].value, dtype=int) \
@@ -419,9 +435,7 @@ class spikeclass(object):
         If there are more than 1Mio data points, randomly sample 1Mio
         shapes and compute PCA from this subset only. Projections are
         then returned for all shapes.
-
         Arguments:
-
         ncomp -- the number of components to return
         white -- Perform whitening of data if set to True"""
 
@@ -447,9 +461,7 @@ class spikeclass(object):
                           njobs=-2,
                           mbf=1):
         """Performs the scikit-learn Mean Shift clustering.
-
         Arguments:
-
         h -- the bandwidth
         alpha -- the weight of the principal components as compared
         to the spatial data.
@@ -474,9 +486,7 @@ class spikeclass(object):
 
     def RemoveData(self, newn):
         """Randomly chooses datapoints and deletes all the others
-
         Arguments:
-
         newn -- the number of datapoints to be kept"""
         self.Backup()
         initialn = self.NData()
@@ -495,7 +505,6 @@ class spikeclass(object):
     def FilterLowDensity(self, threshold, nbins=[400, 400]):
         """Bins points in 100 bins per axis and deletes points
         in bins with number of points <= threshold.
-
         Returns an array containing the indices corresponding to KEPT data.
         """
         self.Backup()
@@ -577,9 +586,7 @@ class spikeclass(object):
     def Crop(self, rectangle, outside=False, remove=True):
         """Keeps only datapoints inside the relevant window,
         or outside, if outside=True is passed.
-
         If remove=False, returns but doesn't remove the spikes.
-
         Returns: the indices of spikes and of clusters in the area."""
         (xmin, xmax, ymin, ymax) = rectangle
 
@@ -781,22 +788,18 @@ class QualityMeasures(object):
         Fit a len(p)-component Gaussin mixture model to a set of clusters,
         estimate the cluster overlap and return a confusion matrix, from which
         false positives and negatives can be obtained.
-
         Data is provided as list in p, each an array conatining PCA pojections
         or locations or both.
-
         This method is based on:
         Hill, Daniel N., Samar B. Mehta, and David Kleinfeld.
         Quality metrics to accompany spike sorting of extracellular signals.
         Journal of Neuroscience 31.24 (2011): 8699-8705.
-
         From the original description by Hill et al.:
         The percent of false positive and false negative errors are estimated
         for both classes and stored as a confusion matrix. Error rates are
         calculated by integrating the posterior probability of a
         misclassification.  The integral is then normalized by the number of
         events in the cluster of interest.
-
         Returns:
         confusion - a confusion matrix, diagonals have fase positive, and
         off-diagonals false negatives
